@@ -1,0 +1,77 @@
+# Hiver SDE Intern Take-Home — Central Config
+# Thresholds here are *initial guesses*; the real values are tuned on the
+# validation split and documented in reports/threshold_sweep.md.
+
+# --- Brand selection (Phase 1) ---
+# Weighted scoring formula. Each sub-metric is min-max normalised across
+# candidate brands before weighting. Weights are documented assumptions.
+brand_selection:
+  weights:
+    volume: 0.20            # total conversations involving the brand
+    reconstructable_threads: 0.25  # multi-turn customer->brand->customer threads
+    thread_length_parity: 0.10    # balanced back-and-forth (not one-shot)
+    low_noise: 0.20         # inverse of estimated noise rate
+    topic_diversity: 0.15  # vocabulary/cluster diversity of customer messages
+    resolution_richness: 0.10  # fraction of threads ending in a resolution-like message
+  noise_thresholds:
+    max_message_length: 12       # very short messages count as noise
+    pure_emoji_link_ratio: 0.9   # >=90% emoji/URL content counts as noise
+  resolution_heuristics:
+    keywords: ["dm", "resolved", "fixed", "working now", "apologize", "sorry",
+               "let me know", "please let me know", "help page", "help center",
+               "troubleshoot", "escalate", "follow up", "case"]
+    must_contain_fix_or_apology: true
+
+# --- Intent taxonomy (Phase 3) ---
+taxonomy:
+  intents:
+    - name: billing_invoice
+      escalation_sensitive: true
+    - name: account_security
+      escalation_sensitive: true
+    - name: technical_bug
+      escalation_sensitive: false
+    - name: feature_request
+      escalation_sensitive: false
+    - name: shipping_delivery
+      escalation_sensitive: false
+    - name: product_usage
+      escalation_sensitive: false
+    - name: account_access
+      escalation_sensitive: true
+    - name: complaint_safety
+      escalation_sensitive: true
+    - name: other_unknown
+      escalation_sensitive: false
+
+# --- Classifier (Phase 6) ---
+classifier:
+  type: llm_fewshot        # keyword_baseline | embedding_knn | llm_fewshot
+  max_examples_in_prompt: 6
+  temperature: 0.0
+
+# --- Retrieval (Phase 7) ---
+retrieval:
+  top_k: 5
+  embedding_model: "all-MiniLM-L6-v2"
+  min_similarity: 0.35
+
+# --- Router / escalation (Phase 8) ---
+router:
+  auto_handle_min_intent_conf: 0.55
+  auto_handle_min_retrieval_sim: 0.55
+  auto_handle_min_grounding: 0.60
+  escalate_if_intent_sensitive: true
+
+# --- LLM judge (Phase 9) ---
+judge:
+  model: "gpt-4o-mini"
+  temperature: 0.0
+  rubric_dimensions:
+    - relevance
+    - correctness
+    - grounding
+    - helpfulness
+    - completeness
+    - tone
+    - no_unsupported_claims

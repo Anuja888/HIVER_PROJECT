@@ -1,0 +1,5 @@
+{
+  "name": "hiver-sde-intern-takehome",
+  "description": "AI Customer Support Agent for Hiver SDE Intern Take-Home Assignment",
+  "model": "kilo-auto/free"
+}
